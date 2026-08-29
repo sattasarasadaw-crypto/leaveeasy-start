@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ใส่ข้อมูลตัวอย่าง — LeaveEasy</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🌱 ใส่ข้อมูลตัวอย่างลง Firestore</h1>
+    <p class="subtitle">หน้านี้ใช้ครั้งเดียวตอนตั้งค่าระบบ (ใบงาน Part C) ไม่ใช่หน้าหนึ่งใน 5 หน้าหลักของระบบ</p>
+
+    <div class="card">
+      <p>กดปุ่มด้านล่างเพื่อใส่ข้อมูลตัวอย่างตาม <code>leaveeasy-spec.md</code> หัวข้อ 7:</p>
+      <ul>
+        <li>ผู้ใช้ 3 คน (<code>users</code>)</li>
+        <li>ประเภทการลา 3 แบบ (<code>leaveTypes</code>)</li>
+        <li>ใบขอลา 5 ใบ (<code>leaveRequests</code>)</li>
+        <li>ความเห็นการอนุมัติ 4 รายการ (<code>approvals</code> ใต้ใบลาที่เกี่ยวข้อง)</li>
+      </ul>
+      <p class="hint">⚠️ กดครั้งเดียวพอ — ถ้ากดซ้ำจะเขียนทับข้อมูลเดิมด้วยชุดเดียวกัน (ไม่ซ้ำเป็น 2 ชุด เพราะใช้ชื่อไฟล์ตายตัว) แต่ไม่จำเป็นต้องกดซ้ำ</p>
+      <button id="seedBtn" class="btn-ok">ใส่ข้อมูลตัวอย่าง</button>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/seed.js"></script>
+</body>
+</html>
