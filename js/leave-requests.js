@@ -1,8 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 // js/leave-requests.js — หน้าที่ 1 รายการใบลา
-// สัปดาห์ที่ 6 (Part D): อ่านใบลาจาก Firestore จริง เรียงใหม่ไปเก่า
-// ใบลาที่เพิ่งยื่นในหน้าถัดไปยังอยู่ใน sessionStorage เหมือนเดิม
-// (การบันทึกลง Firestore จริงจากฟอร์มเป็นงานของสัปดาห์ที่ 7)
+// อ่านใบลาจาก Firestore จริงทั้งหมด เรียงใหม่ไปเก่า
 // ─────────────────────────────────────────────────────────────
 
 import { db } from "./firebase-config.js";
@@ -18,12 +16,9 @@ async function โหลดและแสดง() {
   try {
     var q = query(collection(db, "leaveRequests"), orderBy("createdAt", "desc"));
     var snapshot = await getDocs(q);
-    var ใบลาจากฐานข้อมูล = snapshot.docs.map(function (d) {
+    var ใบลาทั้งหมด = snapshot.docs.map(function (d) {
       return Object.assign({ id: d.id }, d.data());
     });
-
-    var ใบลาที่ยื่นใหม่ = JSON.parse(sessionStorage.getItem("ใบลาที่ยื่นใหม่") || "[]");
-    var ใบลาทั้งหมด = ใบลาที่ยื่นใหม่.concat(ใบลาจากฐานข้อมูล);
 
     var สถานะที่กรอง = ค่าจากURL("status");
     if (สถานะที่กรอง) {
