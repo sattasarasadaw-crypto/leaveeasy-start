@@ -5,7 +5,7 @@
 
 import { db } from "./firebase-config.js";
 import {
-  doc, getDoc, updateDoc,
+  doc, getDoc, updateDoc, deleteDoc,
   collection, addDoc, getDocs, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -75,11 +75,38 @@ function วาดใบลา() {
     html += '<p class="hint">ใบนี้พิจารณาแล้ว จึงเปลี่ยนสถานะต่อไม่ได้</p>';
   }
 
+  // ปุ่มลบ — ลบได้เฉพาะใบที่ยังรอพิจารณา (US-07)
+  html +=
+    '<div class="btn-row">' +
+    '<button type="button" class="btn-danger" id="ปุ่มลบใบลา"' +
+    (ใบ.status !== "รอพิจารณา" ? " disabled" : "") + ">ลบใบลา</button>" +
+    "</div>";
+
   กล่องใบลา.innerHTML = html;
 
   if (ใบ.status === "รอพิจารณา") {
     document.getElementById("ปุ่มอนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("อนุมัติ"); });
     document.getElementById("ปุ่มไม่อนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("ไม่อนุมัติ"); });
+  }
+  document.getElementById("ปุ่มลบใบลา").addEventListener("click", ลบใบลา);
+}
+
+// ── ลบใบลา — ต้องยืนยันก่อนเสมอ ลบได้เฉพาะใบที่ยังรอพิจารณา ──
+async function ลบใบลา() {
+  if (ใบ.status !== "รอพิจารณา") return;
+  if (!confirm('ยืนยันการลบใบลา "' + ใบ.title + '" หรือไม่ — เมื่อลบแล้วกู้คืนไม่ได้')) return;
+
+  var ปุ่มลบ = document.getElementById("ปุ่มลบใบลา");
+  ปุ่มลบ.disabled = true;
+  ปุ่มลบ.textContent = "กำลังลบ...";
+
+  try {
+    await deleteDoc(doc(db, "leaveRequests", รหัสใบลา));
+    location.href = "leave-requests.html";
+  } catch (err) {
+    alert("ลบไม่สำเร็จ: " + err.message);
+    ปุ่มลบ.disabled = false;
+    ปุ่มลบ.textContent = "ลบใบลา";
   }
 }
 
