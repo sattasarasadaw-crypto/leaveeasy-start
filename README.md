@@ -1,5 +1,7 @@
 # 🔧 LeaveEasy — จุดเริ่มต้นของใบงาน
 
+**🌐 เว็บที่ deploy แล้ว:** https://leaveeasy-sattasarasada.web.app
+
 **ผู้จัดทำ:** สัตตสรษดา วงศ์เพชรมณีโชติ
 
 **ADT-RAISE Non-Degree Batch 2 · Module 2: MVP-Ready** (สัปดาห์ที่ 6–9)
