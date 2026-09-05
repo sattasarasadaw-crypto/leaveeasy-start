@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { db } from "./firebase-config.js";
+import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
 import {
   collection, getDocs, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -14,11 +15,18 @@ var กล่อง = document.getElementById("ผลลัพธ์");
 
 async function โหลดและแสดง() {
   try {
+    var ผู้ใช้ปัจจุบัน = await รอผู้ใช้ล็อกอิน();
+
     var q = query(collection(db, "leaveRequests"), orderBy("createdAt", "desc"));
     var snapshot = await getDocs(q);
     var ใบลาทั้งหมด = snapshot.docs.map(function (d) {
       return Object.assign({ id: d.id }, d.data());
     });
+
+    // employee เห็นเฉพาะใบของตัวเอง — ACL.md
+    if (ผู้ใช้ปัจจุบัน.role === "employee") {
+      ใบลาทั้งหมด = ใบลาทั้งหมด.filter(function (ใบ) { return ใบ.requesterId === ผู้ใช้ปัจจุบัน.uid; });
+    }
 
     var สถานะที่กรอง = ค่าจากURL("status");
     if (สถานะที่กรอง) {

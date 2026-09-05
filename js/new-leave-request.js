@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { db } from "./firebase-config.js";
+import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
 import {
   collection, addDoc
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -46,28 +47,27 @@ import {
 
     var ประเภท = window.LEAVE_DATA.leaveTypes.find(function (t) { return t.id === ค่า.leaveTypeId; });
 
-    // สัปดาห์ที่ 7 ยังไม่มีล็อกอิน จึงสมมติว่าผู้ขอลาคือ สมชาย ใจดี
-    var ใบใหม่ = {
-      title: ค่า.title,
-      reason: ค่า.reason,
-      status: "รอพิจารณา",                       // ใบใหม่เริ่มที่ รอพิจารณา เสมอ
-      requesterId: "u001", requesterName: "สมชาย ใจดี",
-      approverId: "",      approverName: "",
-      leaveTypeId: ประเภท.id, leaveTypeName: ประเภท.name,
-      startDate: ค่า.startDate,
-      endDate: ค่า.endDate,
-      createdAt: เวลาตอนนี้()
-    };
-
-    บันทึกลงฐานข้อมูล(ใบใหม่);
+    บันทึกลงฐานข้อมูล(ค่า, ประเภท);
   });
 
-  async function บันทึกลงฐานข้อมูล(ใบใหม่) {
+  async function บันทึกลงฐานข้อมูล(ค่า, ประเภท) {
     ปุ่มบันทึก.disabled = true;
     ปุ่มบันทึก.textContent = "กำลังบันทึก...";
     กล่องเตือน.classList.add("hidden");
 
     try {
+      var ผู้ใช้ = await รอผู้ใช้ล็อกอิน();
+      var ใบใหม่ = {
+        title: ค่า.title,
+        reason: ค่า.reason,
+        status: "รอพิจารณา",                       // ใบใหม่เริ่มที่ รอพิจารณา เสมอ
+        requesterId: ผู้ใช้.uid, requesterName: ผู้ใช้.name,
+        approverId: "",      approverName: "",
+        leaveTypeId: ประเภท.id, leaveTypeName: ประเภท.name,
+        startDate: ค่า.startDate,
+        endDate: ค่า.endDate,
+        createdAt: เวลาตอนนี้()
+      };
       await addDoc(collection(db, "leaveRequests"), ใบใหม่);
       location.href = "leave-requests.html";
     } catch (err) {

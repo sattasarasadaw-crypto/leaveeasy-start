@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { db } from "./firebase-config.js";
+import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
 import {
   doc, getDoc, updateDoc, deleteDoc,
   collection, addDoc, getDocs, query, orderBy
@@ -15,11 +16,14 @@ var กล่องความเห็น = document.getElementById("กล่
 
 var ใบ = null;
 var ความเห็น = [];
+var ผู้ใช้ปัจจุบัน = null;
 
 โหลดและแสดง();
 
 async function โหลดและแสดง() {
   try {
+    ผู้ใช้ปัจจุบัน = await รอผู้ใช้ล็อกอิน();
+
     var snap = await getDoc(doc(db, "leaveRequests", รหัสใบลา));
     if (!snap.exists()) {
       กล่องใบลา.innerHTML = "<p>ไม่พบใบขอลาที่ต้องการ — อาจถูกลบไปแล้ว หรือลิงก์ไม่ถูกต้อง</p>";
@@ -64,27 +68,31 @@ function วาดใบลา() {
     return '<div class="field-row"><span class="k">' + r[0] + "</span><span>" + r[1] + "</span></div>";
   }).join("");
 
-  // ปุ่มอนุมัติ / ไม่อนุมัติ ขึ้นเฉพาะใบที่ยังรอพิจารณา
-  if (ใบ.status === "รอพิจารณา") {
+  // ปุ่มอนุมัติ / ไม่อนุมัติ ขึ้นเฉพาะใบที่ยังรอพิจารณา และเฉพาะ role ที่พิจารณาได้ (ผู้ขอลาเปลี่ยนสถานะไม่ได้ — ACL.md)
+  var พิจารณาได้ = ผู้ใช้ปัจจุบัน.role !== "employee";
+  if (ใบ.status === "รอพิจารณา" && พิจารณาได้) {
     html +=
       '<div class="btn-row">' +
       '<button type="button" class="btn-ok" id="ปุ่มอนุมัติ">อนุมัติ</button>' +
       '<button type="button" class="btn-danger" id="ปุ่มไม่อนุมัติ">ไม่อนุมัติ</button>' +
       "</div>";
+  } else if (ใบ.status === "รอพิจารณา") {
+    html += '<p class="hint">รอผู้อนุมัติหรือฝ่ายบุคคลพิจารณา</p>';
   } else {
     html += '<p class="hint">ใบนี้พิจารณาแล้ว จึงเปลี่ยนสถานะต่อไม่ได้</p>';
   }
 
-  // ปุ่มลบ — ลบได้เฉพาะใบที่ยังรอพิจารณา (US-07)
+  // ปุ่มลบ — ลบได้เฉพาะใบของตัวเองที่ยังรอพิจารณา (US-07)
+  var ลบได้ = ใบ.status === "รอพิจารณา" && ใบ.requesterId === ผู้ใช้ปัจจุบัน.uid;
   html +=
     '<div class="btn-row">' +
     '<button type="button" class="btn-danger" id="ปุ่มลบใบลา"' +
-    (ใบ.status !== "รอพิจารณา" ? " disabled" : "") + ">ลบใบลา</button>" +
+    (ลบได้ ? "" : " disabled") + ">ลบใบลา</button>" +
     "</div>";
 
   กล่องใบลา.innerHTML = html;
 
-  if (ใบ.status === "รอพิจารณา") {
+  if (ใบ.status === "รอพิจารณา" && พิจารณาได้) {
     document.getElementById("ปุ่มอนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("อนุมัติ"); });
     document.getElementById("ปุ่มไม่อนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("ไม่อนุมัติ"); });
   }
@@ -93,7 +101,7 @@ function วาดใบลา() {
 
 // ── ลบใบลา — ต้องยืนยันก่อนเสมอ ลบได้เฉพาะใบที่ยังรอพิจารณา ──
 async function ลบใบลา() {
-  if (ใบ.status !== "รอพิจารณา") return;
+  if (ใบ.status !== "รอพิจารณา" || ใบ.requesterId !== ผู้ใช้ปัจจุบัน.uid) return;
   if (!confirm('ยืนยันการลบใบลา "' + ใบ.title + '" หรือไม่ — เมื่อลบแล้วกู้คืนไม่ได้')) return;
 
   var ปุ่มลบ = document.getElementById("ปุ่มลบใบลา");
@@ -163,9 +171,8 @@ async function ส่งความเห็น() {
   เตือน.classList.add("hidden");
   ปุ่มส่ง.disabled = true;
 
-  // สัปดาห์ที่ 7 ยังไม่มีล็อกอิน จึงสมมติว่าผู้เขียนคือ สมหญิง รักงาน
   var ความเห็นใหม่ = {
-    authorId: "u002", authorName: "สมหญิง รักงาน",
+    authorId: ผู้ใช้ปัจจุบัน.uid, authorName: ผู้ใช้ปัจจุบัน.name,
     message: ข้อความ,
     createdAt: เวลาตอนนี้()
   };
