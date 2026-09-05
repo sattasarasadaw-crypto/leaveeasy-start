@@ -39,6 +39,10 @@ Shared code: `js/nav.js` (renders the top nav bar into `<div id="nav">` on every
 
 **Status state machine** (spec §6): `รอพิจารณา` (pending) → `อนุมัติ` (approved) or `ไม่อนุมัติ` (rejected), both terminal. Only the `status` field should ever be written during a transition — never overwrite the rest of the document. Setting status to `ไม่อนุมัติ` requires at least one existing `approvals` entry first.
 
+## Evidence screenshots (docs/)
+
+Organize every batch of evidence as `docs/week{N}/part-{X}/descriptive-name.png` — one subfolder per week, and a `part-X` subfolder per lab section within that week when the section is identifiable (e.g. `week7/part-b/`, `week7/part-c/`). Evidence that isn't tied to one specific section (e.g. a repo/commit-history screenshot) goes directly under the week folder. When reorganizing existing files into this layout, use `git mv` so history follows the rename instead of showing a delete+add.
+
 ## Code style conventions already in use
 
 - Local variable and function names are Thai (e.g. `กล่อง`, `ใบลา`, `เปลี่ยนสถานะ`, `วาดตาราง`); data field names, collection names, and role values (`employee`/`manager`/`hr`) are always English, matching the spec. Follow this split when adding code — don't switch an existing file to all-English or all-Thai identifiers.
