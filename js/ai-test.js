@@ -3,8 +3,6 @@
 // หน้านี้ใช้ทดสอบการเชื่อมต่อเท่านั้น ยังไม่ใช่ฟีเจอร์จริงของระบบ
 // ─────────────────────────────────────────────────────────────
 
-import { OPENROUTER_API_KEY } from "./config.local.js";
-
 var ปุ่ม = document.getElementById("testBtn");
 var กล่องผล = document.getElementById("result");
 
@@ -16,6 +14,8 @@ async function ทดสอบเรียกAI() {
   แสดงผล("", "");
 
   try {
+    var { OPENROUTER_API_KEY } = await import("./config.local.js");
+
     var res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {

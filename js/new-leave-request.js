@@ -5,7 +5,6 @@
 
 import { db } from "./firebase-config.js";
 import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
-import { OPENROUTER_API_KEY } from "./config.local.js";
 import {
   collection, addDoc
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -45,6 +44,8 @@ import {
     var หมดเวลา = setTimeout(function () { ตัวควบคุมยกเลิก.abort(); }, 15000);
 
     try {
+      var { OPENROUTER_API_KEY } = await import("./config.local.js");
+
       var รายชื่อประเภท = window.LEAVE_DATA.leaveTypes.map(function (t) {
         return { id: t.id, name: t.name };
       });

@@ -5,7 +5,6 @@
 
 import { db } from "./firebase-config.js";
 import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
-import { OPENROUTER_API_KEY } from "./config.local.js";
 import {
   doc, getDoc, updateDoc, deleteDoc,
   collection, addDoc, getDocs, query, orderBy
@@ -137,6 +136,8 @@ async function สรุปใบลาด้วยAI() {
     "เหตุผลการลา: " + ใบ.reason;
 
   try {
+    var { OPENROUTER_API_KEY } = await import("./config.local.js");
+
     var res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       signal: ตัวควบคุมยกเลิก.signal,
