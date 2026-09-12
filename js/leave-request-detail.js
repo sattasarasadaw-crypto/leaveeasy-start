@@ -5,6 +5,7 @@
 
 import { db } from "./firebase-config.js";
 import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
+import { OPENROUTER_API_KEY } from "./config.local.js";
 import {
   doc, getDoc, updateDoc, deleteDoc,
   collection, addDoc, getDocs, query, orderBy
@@ -70,6 +71,18 @@ function วาดใบลา() {
 
   // ปุ่มอนุมัติ / ไม่อนุมัติ ขึ้นเฉพาะใบที่ยังรอพิจารณา และเฉพาะ role ที่พิจารณาได้ (ผู้ขอลาเปลี่ยนสถานะไม่ได้ — ACL.md)
   var พิจารณาได้ = ผู้ใช้ปัจจุบัน.role !== "employee";
+
+  // ปุ่มให้ AI สรุปใบลา — ให้อ่านประกอบการตัดสินใจเท่านั้น ไม่แตะ status (ใบงานสัปดาห์ที่ 8 ส่วน B)
+  if (พิจารณาได้) {
+    html +=
+      '<div class="btn-row">' +
+      '<button type="button" id="ปุ่มสรุปAI" class="btn-ghost">🤖 ให้ AI สรุปใบลานี้</button>' +
+      "</div>" +
+      '<div id="ผลสรุปAI" class="alert alert-ai' + (ใบ.aiSuggestion ? "" : " hidden") + '">' +
+      (ใบ.aiSuggestion ? "🤖 สรุปโดย AI — ใช้ประกอบการตัดสินใจเท่านั้น: " + esc(ใบ.aiSuggestion) : "") +
+      "</div>";
+  }
+
   if (ใบ.status === "รอพิจารณา" && พิจารณาได้) {
     html +=
       '<div class="btn-row">' +
@@ -92,11 +105,85 @@ function วาดใบลา() {
 
   กล่องใบลา.innerHTML = html;
 
+  if (พิจารณาได้) {
+    document.getElementById("ปุ่มสรุปAI").addEventListener("click", สรุปใบลาด้วยAI);
+  }
   if (ใบ.status === "รอพิจารณา" && พิจารณาได้) {
     document.getElementById("ปุ่มอนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("อนุมัติ"); });
     document.getElementById("ปุ่มไม่อนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("ไม่อนุมัติ"); });
   }
   document.getElementById("ปุ่มลบใบลา").addEventListener("click", ลบใบลา);
+}
+
+// ── ให้ AI สรุปใบลาให้หัวหน้าอ่าน — สรุปเท่านั้น ห้ามแตะ status ──
+async function สรุปใบลาด้วยAI() {
+  var ปุ่ม = document.getElementById("ปุ่มสรุปAI");
+  var กล่องผล = document.getElementById("ผลสรุปAI");
+  var ข้อความปุ่มเดิม = ปุ่ม.textContent;
+
+  ปุ่ม.disabled = true;
+  ปุ่ม.textContent = "กำลังให้ AI สรุป...";
+  กล่องผล.className = "alert hidden";
+  กล่องผล.textContent = "";
+
+  var ตัวควบคุมยกเลิก = new AbortController();
+  var หมดเวลา = setTimeout(function () { ตัวควบคุมยกเลิก.abort(); }, 15000);
+
+  var ข้อความให้AI =
+    "หัวข้อ: " + ใบ.title + "\n" +
+    "ประเภทการลา: " + ใบ.leaveTypeName + "\n" +
+    "ช่วงวันที่: " + ใบ.startDate + " ถึง " + ใบ.endDate + "\n" +
+    "ผู้ขอลา: " + ใบ.requesterName + "\n" +
+    "เหตุผลการลา: " + ใบ.reason;
+
+  try {
+    var res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      signal: ตัวควบคุมยกเลิก.signal,
+      headers: {
+        "Authorization": "Bearer " + OPENROUTER_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: "คุณช่วยสรุปใบลาให้หัวหน้าอ่านก่อนตัดสินใจ ตอบเป็นภาษาไทยสั้น ๆ 1-2 ประโยค สรุปข้อเท็จจริงเท่านั้น ห้ามแนะนำว่าควรอนุมัติหรือไม่อนุมัติ"
+          },
+          { role: "user", content: ข้อความให้AI }
+        ]
+      })
+    });
+
+    var data = await res.json();
+    if (!res.ok) {
+      throw new Error((data.error && data.error.message) || "เรียก API ไม่สำเร็จ");
+    }
+    var สรุป = (data.choices[0].message.content || "").trim();
+    if (!สรุป) throw new Error("AI ไม่ได้ตอบข้อความสรุปกลับมา");
+
+    // เขียนเฉพาะช่อง aiSuggestion — ห้ามเขียนทับช่องอื่นของใบลา (โดยเฉพาะ status)
+    await updateDoc(doc(db, "leaveRequests", รหัสใบลา), { aiSuggestion: สรุป });
+    await addDoc(collection(db, "leaveRequests", รหัสใบลา, "aiLog"), {
+      input: ข้อความให้AI,
+      output: สรุป,
+      createdAt: เวลาตอนนี้()
+    });
+
+    ใบ.aiSuggestion = สรุป;
+    วาดใบลา();
+  } catch (err) {
+    var ข้อความเตือน = err.name === "AbortError"
+      ? "⌛ รอ AI นานเกิน 15 วินาที — ยังกดอนุมัติ/ไม่อนุมัติได้ตามปกติ"
+      : "❌ ให้ AI สรุปไม่สำเร็จ: " + err.message + " — ยังกดอนุมัติ/ไม่อนุมัติได้ตามปกติ";
+    กล่องผล.className = "alert alert-error";
+    กล่องผล.textContent = ข้อความเตือน;
+    ปุ่ม.disabled = false;
+    ปุ่ม.textContent = ข้อความปุ่มเดิม;
+  } finally {
+    clearTimeout(หมดเวลา);
+  }
 }
 
 // ── ลบใบลา — ต้องยืนยันก่อนเสมอ ลบได้เฉพาะใบที่ยังรอพิจารณา ──

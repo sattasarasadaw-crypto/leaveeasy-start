@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ทดสอบเรียก AI — LeaveEasy</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/util.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 ทดสอบเรียก AI (OpenRouter)</h1>
+    <p class="subtitle">หน้านี้ใช้ทดสอบการเชื่อมต่อ OpenRouter เท่านั้น (ใบงานสัปดาห์ที่ 8 ส่วน A1) ไม่ใช่หน้าหนึ่งใน 5 หน้าหลักของระบบ</p>
+
+    <div class="card">
+      <p>กดปุ่มด้านล่างเพื่อส่งข้อความ "สวัสดี" ไปให้ AI (โมเดล <code>google/gemini-2.5-flash-lite</code>)</p>
+      <button id="testBtn" class="btn-ok">ส่งข้อความทดสอบ</button>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/ai-test.js"></script>
+</body>
+</html>
