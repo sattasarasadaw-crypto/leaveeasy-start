@@ -17,6 +17,7 @@ desktop.ini
 *.log
 .vscode/
 .idea/
+.playwright-mcp/
 
 
 # ── ไฟล์ตั้งค่าที่มีความลับ (คีย์ / รหัสผ่าน / โทเคน) ──
